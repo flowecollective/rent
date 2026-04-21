@@ -54,15 +54,22 @@ export async function POST(req: NextRequest) {
     .update({ payment_method_status: "pending", updated_at: new Date().toISOString() })
     .eq("id", stylist.id);
 
+  // If the stylist has previously attempted setup, treat this as a resend
+  // so the email body tells them to reconnect (works around an earlier flow
+  // that didn't capture the account holder name).
+  const isResend = stylist.payment_method_status !== "none";
+
   let emailed = false;
   let emailError: string | null = null;
   if (session.url && stylist.email) {
     try {
       await sendMail({
         to: stylist.email,
-        subject: "Connect your bank — Flowe Collective",
-        text: buildEmailText(stylist.name, session.url),
-        html: buildEmailHtml(stylist.name, session.url),
+        subject: isResend
+          ? "Quick reconnect for your Flowe Collective ACH setup"
+          : "Connect your bank — Flowe Collective",
+        text: buildEmailText(stylist.name, session.url, isResend),
+        html: buildEmailHtml(stylist.name, session.url, isResend),
       });
       emailed = true;
     } catch (err: any) {
@@ -79,10 +86,13 @@ export async function POST(req: NextRequest) {
   });
 }
 
-function buildEmailText(name: string, url: string): string {
+function buildEmailText(name: string, url: string, isResend: boolean): string {
+  const intro = isResend
+    ? `Quick note — we need you to reconnect your bank to complete ACH setup. This ensures your account holder name is properly captured (our earlier setup flow didn't grab it, and Stripe needs it to finalize). It takes under a minute.`
+    : `Flowe Collective uses Stripe to collect your weekly chair rental via ACH. To get set up, follow this link to connect your bank account (Plaid-powered, secure):`;
   return `Hi ${name},
 
-Flowe Collective uses Stripe to collect your weekly chair rental via ACH. To get set up, follow this link to connect your bank account (Plaid-powered, secure):
+${intro}
 
 ${url}
 
@@ -93,7 +103,11 @@ Flowe Collective
 `;
 }
 
-function buildEmailHtml(name: string, url: string): string {
+function buildEmailHtml(name: string, url: string, isResend: boolean): string {
+  const bodyCopy = isResend
+    ? `Quick reconnect needed — please link your bank again so we can finalize ACH setup. Our earlier setup flow didn't capture the account holder name, and Stripe needs it to complete verification. This takes under a minute.`
+    : `Flowe Collective uses Stripe to collect your weekly chair rental via ACH. To get set up, connect your bank account below — it takes about a minute and is secured by Stripe's Plaid integration.`;
+  const buttonLabel = isResend ? "Reconnect your bank" : "Connect your bank";
   // Simple, email-client-safe HTML (inline styles, no external assets).
   return `<!DOCTYPE html>
 <html>
@@ -115,13 +129,13 @@ function buildEmailHtml(name: string, url: string): string {
           </tr>
           <tr>
             <td style="padding:0 0 24px 0;font-size:15px;line-height:1.6;color:#333;">
-              Flowe Collective uses Stripe to collect your weekly chair rental via ACH. To get set up, connect your bank account below — it takes about a minute and is secured by Stripe's Plaid integration.
+              ${bodyCopy}
             </td>
           </tr>
           <tr>
             <td style="padding:0 0 28px 0;">
               <a href="${url}" style="display:inline-block;background:#1A1A1A;color:#FAF6F0;padding:14px 28px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;text-decoration:none;">
-                Connect your bank
+                ${buttonLabel}
               </a>
             </td>
           </tr>

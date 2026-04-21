@@ -22,6 +22,7 @@ type AddForm = {
   email: string;
   billing_model: BillingModel;
   fee_rate_pct: string; // percentage string, e.g. "35" or "7.5"
+  weekly_rent: string;
   minimum_remit: string;
 };
 
@@ -40,9 +41,15 @@ function defaultAdd(): AddForm {
     name: "",
     email: "",
     billing_model: "rent_plus_fee",
-    fee_rate_pct: "35",
+    fee_rate_pct: "7.5",
+    weekly_rent: "600",
     minimum_remit: "600",
   };
+}
+
+function defaultsForModel(m: BillingModel): { fee_rate_pct: string; weekly_rent: string; minimum_remit: string } {
+  if (m === "percent_rent") return { fee_rate_pct: "35", weekly_rent: "600", minimum_remit: "600" };
+  return { fee_rate_pct: "7.5", weekly_rent: "600", minimum_remit: "600" };
 }
 
 export default function SettingsPage() {
@@ -77,22 +84,33 @@ export default function SettingsPage() {
       email: form.email.trim(),
       billing_model: form.billing_model,
     };
+
+    const rate = parseFloat(form.fee_rate_pct) / 100;
+    if (!Number.isFinite(rate) || rate <= 0 || rate > 1) {
+      setAdding(false);
+      setMsg({ type: "err", text: "Fee rate must be between 0 and 100%" });
+      return;
+    }
+    body.fee_rate = rate;
+
     if (form.billing_model === "percent_rent") {
-      const rate = parseFloat(form.fee_rate_pct) / 100;
       const min = parseFloat(form.minimum_remit);
-      if (!Number.isFinite(rate) || rate <= 0 || rate > 1) {
-        setAdding(false);
-        setMsg({ type: "err", text: "Fee rate must be between 0 and 100%" });
-        return;
-      }
       if (!Number.isFinite(min) || min < 0) {
         setAdding(false);
-        setMsg({ type: "err", text: "Minimum remit must be a non-negative number" });
+        setMsg({ type: "err", text: "Weekly minimum must be non-negative" });
         return;
       }
-      body.fee_rate = rate;
       body.minimum_remit = min;
+    } else {
+      const rent = parseFloat(form.weekly_rent);
+      if (!Number.isFinite(rent) || rent < 0) {
+        setAdding(false);
+        setMsg({ type: "err", text: "Weekly rent must be non-negative" });
+        return;
+      }
+      body.weekly_rent = rent;
     }
+
     const res = await fetch("/api/stylists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -270,46 +288,60 @@ export default function SettingsPage() {
                 </label>
                 <select
                   value={form.billing_model}
-                  onChange={(e) =>
-                    setForm({ ...form, billing_model: e.target.value as BillingModel })
-                  }
+                  onChange={(e) => {
+                    const next = e.target.value as BillingModel;
+                    setForm({ ...form, billing_model: next, ...defaultsForModel(next) });
+                  }}
                   className="w-full"
                 >
-                  <option value="rent_plus_fee">rent + fee ($600/wk + 7.5%)</option>
+                  <option value="rent_plus_fee">rent + fee</option>
                   <option value="percent_rent">% chair rent (with minimum)</option>
                 </select>
               </div>
 
-              {form.billing_model === "percent_rent" && (
-                <>
-                  <div className="min-w-[140px]">
-                    <label className="block text-[10px] tracking-[0.2em] uppercase text-charcoal-muted mb-2">
-                      Fee rate (%)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="100"
-                      value={form.fee_rate_pct}
-                      onChange={(e) => setForm({ ...form, fee_rate_pct: e.target.value })}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="min-w-[140px]">
-                    <label className="block text-[10px] tracking-[0.2em] uppercase text-charcoal-muted mb-2">
-                      Weekly minimum ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      value={form.minimum_remit}
-                      onChange={(e) => setForm({ ...form, minimum_remit: e.target.value })}
-                      className="w-full"
-                    />
-                  </div>
-                </>
+              <div className="min-w-[140px]">
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-charcoal-muted mb-2">
+                  Fee rate (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={form.fee_rate_pct}
+                  onChange={(e) => setForm({ ...form, fee_rate_pct: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+
+              {form.billing_model === "rent_plus_fee" ? (
+                <div className="min-w-[140px]">
+                  <label className="block text-[10px] tracking-[0.2em] uppercase text-charcoal-muted mb-2">
+                    Weekly rent ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={form.weekly_rent}
+                    onChange={(e) => setForm({ ...form, weekly_rent: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              ) : (
+                <div className="min-w-[140px]">
+                  <label className="block text-[10px] tracking-[0.2em] uppercase text-charcoal-muted mb-2">
+                    Weekly minimum ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={form.minimum_remit}
+                    onChange={(e) => setForm({ ...form, minimum_remit: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
               )}
               <button type="submit" className="btn-primary" disabled={adding}>
                 {adding ? "Adding…" : "Add"}

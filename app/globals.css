@@ -1,0 +1,106 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: #FAF6F0;
+  color: #1A1A1A;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="password"],
+input[type="date"] {
+  background: #FAF6F0;
+  border: 1px solid #1A1A1A;
+  padding: 0.625rem 0.875rem;
+  font-family: "Outfit", sans-serif;
+  font-size: 0.95rem;
+  color: #1A1A1A;
+  transition: border-color 0.15s;
+}
+
+input:focus {
+  outline: none;
+  border-color: #C9A96E;
+}
+
+button {
+  font-family: "Outfit", sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.btn-primary {
+  background: #1A1A1A;
+  color: #FAF6F0;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: background-color 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #C9A96E;
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #1A1A1A;
+  border: 1px solid #1A1A1A;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.15s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #1A1A1A;
+  color: #FAF6F0;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hairline {
+  border-bottom: 1px solid rgba(26, 26, 26, 0.12);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+.status-verified { background: #2D7A4F; }
+.status-pending { background: #C9A96E; }
+.status-none { background: #B44545; }
+.status-paid { background: #2D7A4F; }
+.status-processing { background: #C9A96E; }
+.status-failed { background: #B44545; }
+.status-sent { background: #4A4A4A; }
+.status-draft { background: #B8B8B8; }

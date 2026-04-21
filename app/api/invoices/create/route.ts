@@ -139,15 +139,17 @@ async function processOne(
       });
     }
 
-    // 3. Finalize — triggers the email to the stylist with the hosted invoice link.
-    //    No auto-charge; stylist clicks "Pay" on the hosted page to initiate ACH.
+    // 3. Finalize, then explicitly send the invoice email. Explicit send is
+    //    more reliable than relying on Stripe's auto-send on finalize, which
+    //    can be disabled by account-level email settings.
     const finalized = await stripe.invoices.finalizeInvoice(draft.id!);
+    const sent = await stripe.invoices.sendInvoice(finalized.id!);
 
     await supabaseAdmin
       .from("invoices")
       .update({
-        stripe_invoice_id: finalized.id,
-        stripe_invoice_url: finalized.hosted_invoice_url,
+        stripe_invoice_id: sent.id,
+        stripe_invoice_url: sent.hosted_invoice_url,
         status: "sent",
         updated_at: new Date().toISOString(),
       })

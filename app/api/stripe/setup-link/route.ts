@@ -36,7 +36,11 @@ export async function POST(req: NextRequest) {
     payment_method_types: ["us_bank_account"],
     payment_method_options: {
       us_bank_account: {
-        financial_connections: { permissions: ["payment_method"] },
+        // "ownership" lets Stripe pull the account holder's name from the
+        // bank, populating billing_details.name on the payment method.
+        // Without it, ACH PMs can land in a state where they can't be set
+        // as the customer's default invoice payment method.
+        financial_connections: { permissions: ["payment_method", "ownership"] },
         verification_method: "automatic",
       },
     },

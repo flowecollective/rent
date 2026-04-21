@@ -182,7 +182,7 @@ export default function SettingsPage() {
   }
 
   function modelLabel(m: BillingModel) {
-    return m === "percent_rent" ? "% chair rent" : "Rent + fee";
+    return m === "percent_rent" ? "% chair rent" : "rent + fee";
   }
 
   function modelSummary(s: Stylist) {
@@ -265,7 +265,7 @@ export default function SettingsPage() {
                   }
                   className="w-full"
                 >
-                  <option value="rent_plus_fee">Rent + fee ($600/wk + 7.5%)</option>
+                  <option value="rent_plus_fee">rent + fee ($600/wk + 7.5%)</option>
                   <option value="percent_rent">% chair rent (with minimum)</option>
                 </select>
               </div>
@@ -472,7 +472,7 @@ export default function SettingsPage() {
                   }
                   className="w-full"
                 >
-                  <option value="rent_plus_fee">Rent + fee</option>
+                  <option value="rent_plus_fee">rent + fee</option>
                   <option value="percent_rent">% chair rent (with minimum)</option>
                 </select>
               </div>

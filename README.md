@@ -3,7 +3,7 @@
 Internal weekly invoicing tool for chair rental at Flowe Collective.
 
 - Two billing models, chosen per stylist:
-  - **Rent + fee** (default): $600/week + 7.5% service fee of net service revenue. Service fee capped at $1,000/stylist/month.
+  - **rent + fee** (default): $600/week + 7.5% service fee of net service revenue. Service fee capped at $1,000/stylist/month.
   - **% chair rent**: flat percentage of net service revenue (e.g. 35%) with a weekly minimum floor (e.g. $600). No flat rent. Greater of the two, not additive.
 - Net service revenue = service sales − discounts − refunds (tips excluded via Tippy).
 - Service-fee cap notes (rent + fee model only):

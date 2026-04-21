@@ -173,12 +173,22 @@ export default function SettingsPage() {
       body: JSON.stringify({ stylist_id: stylist.id }),
     });
     const data = await res.json();
-    if (res.ok && data.url) {
-      setLinkModal({ name: stylist.name, url: data.url });
-      load();
-    } else {
+    if (!res.ok || !data.url) {
       setMsg({ type: "err", text: data.error || "Failed to generate link" });
+      return;
     }
+    if (data.emailed) {
+      setMsg({ type: "ok", text: `Setup link emailed to ${stylist.email}` });
+      load();
+      return;
+    }
+    // Fall back to copy/paste modal if email send failed
+    setMsg({
+      type: "err",
+      text: `Email to ${stylist.email} failed${data.email_error ? `: ${data.email_error}` : ""}. Copy the link below and send manually.`,
+    });
+    setLinkModal({ name: stylist.name, url: data.url });
+    load();
   }
 
   function modelLabel(m: BillingModel) {

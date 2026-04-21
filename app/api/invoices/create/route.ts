@@ -98,9 +98,28 @@ async function processOne(
   try {
     const weekLabel = `${week_start} to ${week_end}`;
 
-    // Create pending invoice items attached to customer
+    // 1. Create the invoice as a draft (send_invoice mode — no auto-charge;
+    //    stylist receives an email and reviews before paying).
+    const draft = await stripe.invoices.create({
+      customer: stylist.stripe_customer_id,
+      collection_method: "send_invoice",
+      days_until_due: 2,
+      payment_settings: {
+        payment_method_types: ["us_bank_account"],
+      },
+      description: `Flowe Collective — chair rental, week of ${weekLabel}`,
+      metadata: {
+        internal_invoice_id: invoiceRow.id,
+        stylist_id: stylist.id,
+        week_start,
+        week_end,
+      },
+    });
+
+    // 2. Attach line items directly to this draft invoice
     await stripe.invoiceItems.create({
       customer: stylist.stripe_customer_id,
+      invoice: draft.id,
       amount: Math.round(rent * 100),
       currency: "usd",
       description: `Weekly chair rental — week of ${weekLabel}`,
@@ -113,65 +132,23 @@ async function processOne(
         : `Service fee (7.5% of $${rev.toFixed(2)} net services) — week of ${weekLabel}`;
       await stripe.invoiceItems.create({
         customer: stylist.stripe_customer_id,
+        invoice: draft.id,
         amount: Math.round(serviceFee * 100),
         currency: "usd",
         description,
       });
     }
 
-    // Create invoice in auto-charge mode
-    const invoice = await stripe.invoices.create({
-      customer: stylist.stripe_customer_id,
-      collection_method: "charge_automatically",
-      default_payment_method: stylist.payment_method_id || undefined,
-      auto_advance: true,
-      description: `Flowe Collective — chair rental, week of ${weekLabel}`,
-      metadata: {
-        internal_invoice_id: invoiceRow.id,
-        stylist_id: stylist.id,
-        week_start,
-        week_end,
-      },
-    });
-
-    // Finalize and attempt payment
-    const finalized = await stripe.invoices.finalizeInvoice(invoice.id!);
-    let paid = finalized;
-    try {
-      paid = await stripe.invoices.pay(finalized.id!);
-    } catch (payErr: any) {
-      // Payment failed immediately (rare for ACH - usually it goes to 'processing')
-      await supabaseAdmin
-        .from("invoices")
-        .update({
-          stripe_invoice_id: finalized.id,
-          stripe_invoice_url: finalized.hosted_invoice_url,
-          status: "failed",
-          error_message: payErr?.message || "Payment failed",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", invoiceRow.id);
-      return {
-        stylistId: stylist.id,
-        ok: false,
-        message: `Payment failed: ${payErr?.message || "unknown"}`,
-      };
-    }
-
-    // ACH will be 'open' after .pay() - it moves to 'paid' async via webhook
-    const status =
-      paid.status === "paid"
-        ? "paid"
-        : paid.status === "open"
-        ? "processing"
-        : "sent";
+    // 3. Finalize — triggers the email to the stylist with the hosted invoice link.
+    //    No auto-charge; stylist clicks "Pay" on the hosted page to initiate ACH.
+    const finalized = await stripe.invoices.finalizeInvoice(draft.id!);
 
     await supabaseAdmin
       .from("invoices")
       .update({
-        stripe_invoice_id: paid.id,
-        stripe_invoice_url: paid.hosted_invoice_url,
-        status,
+        stripe_invoice_id: finalized.id,
+        stripe_invoice_url: finalized.hosted_invoice_url,
+        status: "sent",
         updated_at: new Date().toISOString(),
       })
       .eq("id", invoiceRow.id);
@@ -179,10 +156,7 @@ async function processOne(
     return {
       stylistId: stylist.id,
       ok: true,
-      message:
-        status === "processing"
-          ? `ACH submitted — $${total.toFixed(2)} (clears in 3–5 business days)`
-          : `Invoice created — $${total.toFixed(2)}`,
+      message: `Invoice emailed — $${total.toFixed(2)}, stylist has 2 days to pay via ACH`,
     };
   } catch (err: any) {
     await supabaseAdmin

@@ -6,7 +6,7 @@ Internal weekly invoicing tool for chair rental at Flowe Collective.
 - Service fee: 7.5% of net service revenue (service sales − discounts − refunds; tips excluded via Tippy), capped at $1,000/stylist/month
   - "Month" = calendar month the work week *ends in*. A week spanning months counts entirely toward its ending month.
   - Cap counts invoices in `sent | processing | paid` status. Failed invoices don't consume the cap.
-- Payment: ACH auto-charge via Stripe (cheaper than card; ~$5 max per invoice vs ~$26)
+- Payment: ACH via Stripe hosted invoice (stylists receive email, review, then pay; never auto-charged). 2 days to pay. ~$5 max per invoice (vs ~$26 for card).
 - Stack: Next.js 15, Supabase, Stripe, Vercel
 - Access: single password gate (no per-user auth — it's just the admin)
 
@@ -96,8 +96,8 @@ Settings → click "Send setup link" next to their name → copy the URL → tex
 2. Enter each stylist's net service revenue from Boulevard
 3. Review totals
 4. Click "Create & send invoices"
-5. Each stylist gets auto-charged via ACH; invoice emailed as receipt
-6. ACH takes 3–5 business days to clear — status shown as `processing` until webhook confirms `paid` or `failed`
+5. Each stylist receives an email from Stripe with a link to a hosted invoice page. They review line items and click "Pay" to initiate ACH from their saved bank. 2-day payment window.
+6. After they pay, ACH takes 3–5 business days to clear. Invoice status: `sent` → `processing` → `paid` (or `failed`), updated by webhook.
 
 ### Testing with fake ACH (test mode only)
 

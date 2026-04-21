@@ -157,7 +157,8 @@ export default function HomePage() {
               <h2 className="text-4xl mb-2">Weekly invoicing</h2>
               <p className="text-sm text-charcoal-muted">
                 Enter each stylist's net service revenue. Rent ($600) and 7.5% service fee
-                (capped at $1,000/month) are calculated automatically.
+                (capped at $1,000/month) are calculated automatically. Each stylist receives
+                an emailed invoice with 2 days to review and pay via ACH.
               </p>
             </div>
           </div>

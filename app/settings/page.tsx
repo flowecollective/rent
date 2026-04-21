@@ -215,7 +215,7 @@ export default function SettingsPage() {
             <h3 className="text-2xl mb-3">Setup link for {linkModal.name}</h3>
             <p className="text-sm text-charcoal-muted mb-4">
               Text or email this link to the stylist. They'll connect their bank via Stripe
-              (Plaid-powered). Once connected, they're ready for auto-charge.
+              (Plaid-powered). Once connected, they'll be able to pay future invoices with one click.
             </p>
             <div className="bg-cream-dark border border-charcoal/20 p-3 text-xs break-all mb-4 font-mono">
               {linkModal.url}

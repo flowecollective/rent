@@ -95,7 +95,7 @@ export default function HomePage() {
     if (readyStylists.length === 0) return;
     if (
       !confirm(
-        `Create and auto-charge ${readyStylists.length} invoice(s) for the week of ${week.start} – ${week.end}?`
+        `Email ${readyStylists.length} invoice(s) for the week of ${week.start} – ${week.end}? Stylists will have 2 days to review and pay via ACH.`
       )
     )
       return;

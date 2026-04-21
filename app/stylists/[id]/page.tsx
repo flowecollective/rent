@@ -90,14 +90,14 @@ export default function StylistDetailPage() {
   return (
     <div className="min-h-screen">
       <header className="hairline">
-        <div className="max-w-5xl mx-auto px-8 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl leading-none">Flowe Collective</h1>
-            <p className="text-[10px] tracking-[0.3em] uppercase text-charcoal-muted mt-1">
+            <h1 className="text-2xl md:text-3xl leading-none">Flowe Collective</h1>
+            <p className="text-[9px] md:text-[10px] tracking-[0.3em] uppercase text-charcoal-muted mt-1">
               Chair Rental · Invoicing
             </p>
           </div>
-          <nav className="flex items-center gap-6 text-xs tracking-[0.15em] uppercase">
+          <nav className="flex items-center gap-3 md:gap-6 text-[11px] md:text-xs tracking-[0.15em] uppercase">
             <Link href="/" className="text-charcoal-muted hover:text-charcoal">
               Weekly
             </Link>
@@ -108,7 +108,7 @@ export default function StylistDetailPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-8 py-12">
+      <main className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <Link href="/settings" className="text-xs text-charcoal-muted hover:text-charcoal tracking-[0.15em] uppercase">
           ← Back to stylists
         </Link>
@@ -119,8 +119,8 @@ export default function StylistDetailPage() {
           <p className="text-charcoal-muted text-sm mt-8">Stylist not found.</p>
         ) : (
           <>
-            <div className="mt-4 mb-10">
-              <h2 className="text-4xl mb-2">{stylist.name}</h2>
+            <div className="mt-4 mb-8 md:mb-10">
+              <h2 className="text-3xl md:text-4xl mb-2">{stylist.name}</h2>
               <p className="text-sm text-charcoal-muted">{stylist.email}</p>
               <p className="text-xs text-charcoal-muted mt-2">
                 <span className={`status-dot status-${stylist.payment_method_status}`}></span>
@@ -140,7 +140,7 @@ export default function StylistDetailPage() {
                       : `$${(Number(stylist.weekly_rent) || 0).toFixed(0)}/wk + ${((Number(stylist.fee_rate) || 0) * 100).toFixed(1).replace(/\.0$/, "")}% service fee`}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-4 mb-12">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10 md:mb-12">
                   <div className="border border-charcoal/20 p-4">
                     <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
                       Lifetime settled
@@ -194,7 +194,7 @@ export default function StylistDetailPage() {
               <p className="text-sm text-charcoal-muted">No invoices yet.</p>
             ) : (
               <div className="border border-charcoal/20 overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[780px]">
                   <thead>
                     <tr className="hairline text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
                       <th className="text-left p-3 font-normal">Week</th>

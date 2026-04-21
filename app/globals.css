@@ -29,9 +29,19 @@ select {
   border: 1px solid #1A1A1A;
   padding: 0.625rem 0.875rem;
   font-family: "Outfit", sans-serif;
-  font-size: 0.95rem;
+  font-size: 16px; /* 16px prevents iOS zoom on focus */
   color: #1A1A1A;
   transition: border-color 0.15s;
+}
+@media (min-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="password"],
+  input[type="date"],
+  select {
+    font-size: 0.95rem;
+  }
 }
 
 select {

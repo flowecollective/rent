@@ -242,14 +242,14 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen">
       <header className="hairline">
-        <div className="max-w-5xl mx-auto px-8 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl leading-none">Flowe Collective</h1>
-            <p className="text-[10px] tracking-[0.3em] uppercase text-charcoal-muted mt-1">
+            <h1 className="text-2xl md:text-3xl leading-none">Flowe Collective</h1>
+            <p className="text-[9px] md:text-[10px] tracking-[0.3em] uppercase text-charcoal-muted mt-1">
               Chair Rental · Invoicing
             </p>
           </div>
-          <nav className="flex items-center gap-6 text-xs tracking-[0.15em] uppercase">
+          <nav className="flex items-center gap-3 md:gap-6 text-[11px] md:text-xs tracking-[0.15em] uppercase">
             <Link href="/" className="text-charcoal-muted hover:text-charcoal">
               Weekly
             </Link>
@@ -260,14 +260,14 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-8 py-12">
-        <h2 className="text-4xl mb-2">Stylists</h2>
-        <p className="text-sm text-charcoal-muted mb-10">
+      <main className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
+        <h2 className="text-3xl md:text-4xl mb-2">Stylists</h2>
+        <p className="text-sm text-charcoal-muted mb-8 md:mb-10">
           Add renters, send ACH setup links, and manage active roster.
         </p>
 
         {/* Add form */}
-        <section className="mb-12 border border-charcoal/20 p-6">
+        <section className="mb-10 md:mb-12 border border-charcoal/20 p-4 md:p-6">
           <h3 className="text-xl mb-4">Add stylist</h3>
           <form onSubmit={addStylist} className="space-y-4">
             <div className="flex gap-3 flex-wrap">
@@ -379,8 +379,8 @@ export default function SettingsPage() {
           ) : stylists.length === 0 ? (
             <p className="text-sm text-charcoal-muted">No stylists yet.</p>
           ) : (
-            <div className="border border-charcoal/20">
-              <table className="w-full">
+            <div className="border border-charcoal/20 overflow-x-auto">
+              <table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="hairline text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
                     <th className="text-left p-4 font-normal">Stylist</th>
@@ -460,11 +460,11 @@ export default function SettingsPage() {
       {/* Setup link modal */}
       {linkModal && (
         <div
-          className="fixed inset-0 bg-charcoal/60 flex items-center justify-center p-6 z-50"
+          className="fixed inset-0 bg-charcoal/60 flex items-center justify-center p-4 md:p-6 z-50 overflow-y-auto"
           onClick={() => setLinkModal(null)}
         >
           <div
-            className="bg-cream border border-charcoal/30 p-8 max-w-lg w-full"
+            className="bg-cream border border-charcoal/30 p-6 md:p-8 max-w-lg w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-2xl mb-3">Setup link for {linkModal.name}</h3>
@@ -496,11 +496,11 @@ export default function SettingsPage() {
       {/* Edit modal */}
       {editing && (
         <div
-          className="fixed inset-0 bg-charcoal/60 flex items-center justify-center p-6 z-50"
+          className="fixed inset-0 bg-charcoal/60 flex items-center justify-center p-4 md:p-6 z-50 overflow-y-auto"
           onClick={() => setEditing(null)}
         >
           <div
-            className="bg-cream border border-charcoal/30 p-8 max-w-lg w-full"
+            className="bg-cream border border-charcoal/30 p-6 md:p-8 max-w-lg w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-2xl mb-5">Edit stylist</h3>

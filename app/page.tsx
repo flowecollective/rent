@@ -187,14 +187,14 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <header className="hairline">
-        <div className="max-w-5xl mx-auto px-8 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl leading-none">Flowe Collective</h1>
-            <p className="text-[10px] tracking-[0.3em] uppercase text-charcoal-muted mt-1">
+            <h1 className="text-2xl md:text-3xl leading-none">Flowe Collective</h1>
+            <p className="text-[9px] md:text-[10px] tracking-[0.3em] uppercase text-charcoal-muted mt-1">
               Chair Rental · Invoicing
             </p>
           </div>
-          <nav className="flex items-center gap-6 text-xs tracking-[0.15em] uppercase">
+          <nav className="flex items-center gap-3 md:gap-6 text-[11px] md:text-xs tracking-[0.15em] uppercase">
             <Link href="/" className="text-charcoal border-b border-gold pb-1">
               Weekly
             </Link>
@@ -208,11 +208,11 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-8 py-12">
+      <main className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <section className="mb-12">
-          <div className="flex items-end justify-between mb-8">
+          <div className="flex items-end justify-between mb-6 md:mb-8">
             <div>
-              <h2 className="text-4xl mb-2">Weekly invoicing</h2>
+              <h2 className="text-3xl md:text-4xl mb-2">Weekly invoicing</h2>
               <p className="text-sm text-charcoal-muted">
                 Enter each stylist's net service revenue. Totals follow each stylist's billing
                 model (rent + fee, or % chair rent with a minimum). Each stylist receives an
@@ -256,8 +256,8 @@ export default function HomePage() {
               </Link>
             </div>
           ) : (
-            <div className="border border-charcoal/20">
-              <table className="w-full">
+            <div className="border border-charcoal/20 overflow-x-auto">
+              <table className="w-full min-w-[720px]">
                 <thead>
                   <tr className="hairline text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
                     <th className="text-left p-4 font-normal">Stylist</th>
@@ -350,7 +350,7 @@ export default function HomePage() {
           )}
 
           {stylists.length > 0 && (
-            <div className="mt-8 flex items-center justify-between">
+            <div className="mt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <p className="text-sm text-charcoal-muted">
                 {readyStylists.length} of {stylists.length} ready to invoice
                 {stylists.some((s) => s.payment_method_status !== "verified") && (
@@ -360,7 +360,7 @@ export default function HomePage() {
                 )}
               </p>
               <button
-                className="btn-primary"
+                className="btn-primary w-full md:w-auto"
                 onClick={submitInvoices}
                 disabled={submitting || readyStylists.length === 0}
               >
@@ -390,13 +390,13 @@ export default function HomePage() {
           )}
         </section>
 
-        <section className="mt-16">
-          <h2 className="text-2xl mb-6">Recent invoices</h2>
+        <section className="mt-12 md:mt-16">
+          <h2 className="text-2xl mb-4 md:mb-6">Recent invoices</h2>
           {recent.length === 0 ? (
             <p className="text-sm text-charcoal-muted">No invoices yet.</p>
           ) : (
-            <div className="border border-charcoal/20">
-              <table className="w-full text-sm">
+            <div className="border border-charcoal/20 overflow-x-auto">
+              <table className="w-full text-sm min-w-[720px]">
                 <thead>
                   <tr className="hairline text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
                     <th className="text-left p-4 font-normal">Stylist</th>

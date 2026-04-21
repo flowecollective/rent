@@ -212,7 +212,7 @@ export default function HomePage() {
         <section className="mb-12">
           <div className="flex items-end justify-between mb-6 md:mb-8">
             <div>
-              <h2 className="text-3xl md:text-4xl mb-2">Weekly invoicing</h2>
+              <h2 className="text-3xl md:text-4xl mb-2">Weekly Invoicing</h2>
               <p className="text-sm text-charcoal-muted">
                 Enter each stylist's net service revenue. Totals follow each stylist's billing
                 model (rent + fee, or % chair rent with a minimum). Each stylist receives an

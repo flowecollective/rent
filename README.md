@@ -2,8 +2,11 @@
 
 Internal weekly invoicing tool for chair rental at Flowe Collective.
 
-- Rent: $600/week flat
-- Service fee: 7.5% of net service revenue (service sales − discounts − refunds; tips excluded via Tippy), capped at $1,000/stylist/month
+- Two billing models, chosen per stylist:
+  - **Rent + fee** (default): $600/week + 7.5% service fee of net service revenue. Service fee capped at $1,000/stylist/month.
+  - **% chair rent**: flat percentage of net service revenue (e.g. 35%) with a weekly minimum floor (e.g. $600). No flat rent. Greater of the two, not additive.
+- Net service revenue = service sales − discounts − refunds (tips excluded via Tippy).
+- Service-fee cap notes (rent + fee model only):
   - "Month" = calendar month the work week *ends in*. A week spanning months counts entirely toward its ending month.
   - Cap counts invoices in `sent | processing | paid` status. Failed invoices don't consume the cap.
 - Payment: ACH via Stripe hosted invoice (stylists receive email, review, then pay; never auto-charged). 2 days to pay. ~$5 max per invoice (vs ~$26 for card).

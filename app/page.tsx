@@ -11,6 +11,10 @@ type Stylist = {
   payment_method_status: "none" | "pending" | "verified";
   service_fee_monthly_cap: number;
   service_fee_paid_this_month: number;
+  billing_model: "rent_plus_fee" | "percent_rent";
+  fee_rate: number;
+  weekly_rent: number;
+  minimum_remit: number | null;
 };
 
 type RecentInvoice = {
@@ -77,14 +81,50 @@ export default function HomePage() {
 
   function calc(stylist: Stylist) {
     const rev = parseFloat(revenue[stylist.id] || "0") || 0;
-    const rawFee = rev * 0.075;
+    const feeRate = Number(stylist.fee_rate) || (stylist.billing_model === "percent_rent" ? 0.35 : 0.075);
+
+    if (stylist.billing_model === "percent_rent") {
+      const minRemit = Number(stylist.minimum_remit) || 600;
+      const rawFee = Math.round(rev * feeRate * 100) / 100;
+      const minimumApplied = rawFee < minRemit;
+      const fee = minimumApplied ? minRemit : rawFee;
+      return {
+        model: "percent_rent" as const,
+        rev,
+        feeRate,
+        rawFee,
+        minRemit,
+        minimumApplied,
+        fee,
+        rent: 0,
+        total: fee,
+        capped: false,
+        cap: 0,
+        paid: 0,
+      };
+    }
+
+    const rent = Number(stylist.weekly_rent) || 600;
+    const rawFee = Math.round(rev * feeRate * 100) / 100;
     const cap = stylist.service_fee_monthly_cap ?? 1000;
     const paid = stylist.service_fee_paid_this_month ?? 0;
     const remaining = Math.max(0, cap - paid);
-    const serviceFee = Math.min(rawFee, remaining);
-    const capped = serviceFee < rawFee;
-    const total = 600 + serviceFee;
-    return { rev, rawFee, serviceFee, capped, cap, paid, total };
+    const fee = Math.min(rawFee, remaining);
+    const capped = fee < rawFee;
+    return {
+      model: "rent_plus_fee" as const,
+      rev,
+      feeRate,
+      rawFee,
+      fee,
+      rent,
+      total: rent + fee,
+      capped,
+      cap,
+      paid,
+      minimumApplied: false,
+      minRemit: 0,
+    };
   }
 
   const grandTotal = stylists.reduce((sum, s) => sum + calc(s).total, 0);
@@ -174,9 +214,9 @@ export default function HomePage() {
             <div>
               <h2 className="text-4xl mb-2">Weekly invoicing</h2>
               <p className="text-sm text-charcoal-muted">
-                Enter each stylist's net service revenue. Rent ($600) and 7.5% service fee
-                (capped at $1,000/month) are calculated automatically. Each stylist receives
-                an emailed invoice with 2 days to review and pay via ACH.
+                Enter each stylist's net service revenue. Totals follow each stylist's billing
+                model (rent + fee, or % chair rent with a minimum). Each stylist receives an
+                emailed invoice with 2 days to review and pay via ACH.
               </p>
             </div>
           </div>
@@ -223,7 +263,7 @@ export default function HomePage() {
                     <th className="text-left p-4 font-normal">Stylist</th>
                     <th className="text-left p-4 font-normal">Payment method</th>
                     <th className="text-right p-4 font-normal">Net service revenue</th>
-                    <th className="text-right p-4 font-normal">Service fee (7.5%)</th>
+                    <th className="text-right p-4 font-normal">Fee</th>
                     <th className="text-right p-4 font-normal">Rent</th>
                     <th className="text-right p-4 font-normal">Total</th>
                   </tr>
@@ -232,14 +272,21 @@ export default function HomePage() {
                   {stylists.map((s) => {
                     const c = calc(s);
                     const ready = s.payment_method_status === "verified";
+                    const feePct = (c.feeRate * 100).toFixed(1).replace(/\.0$/, "");
                     return (
                       <tr key={s.id} className="hairline last:border-b-0">
                         <td className="p-4">
                           <div className="font-medium">{s.name}</div>
                           <div className="text-xs text-charcoal-muted">{s.email}</div>
-                          <div className="text-[10px] tracking-[0.15em] uppercase text-charcoal-muted mt-1">
-                            Fee this month: {fmtMoney(c.paid)} / {fmtMoney(c.cap)}
-                          </div>
+                          {c.model === "rent_plus_fee" ? (
+                            <div className="text-[10px] tracking-[0.15em] uppercase text-charcoal-muted mt-1">
+                              Fee this month: {fmtMoney(c.paid)} / {fmtMoney(c.cap)}
+                            </div>
+                          ) : (
+                            <div className="text-[10px] tracking-[0.15em] uppercase text-charcoal-muted mt-1">
+                              {feePct}% chair rent · min {fmtMoney(c.minRemit)}
+                            </div>
+                          )}
                         </td>
                         <td className="p-4 text-xs">
                           <span className={`status-dot status-${s.payment_method_status}`}></span>
@@ -261,15 +308,25 @@ export default function HomePage() {
                           />
                         </td>
                         <td className="p-4 text-right tabular-nums text-charcoal-muted">
-                          {fmtMoney(c.serviceFee)}
+                          {fmtMoney(c.fee)}
+                          <div className="text-[10px] text-charcoal-muted mt-1">
+                            {c.model === "percent_rent"
+                              ? `${feePct}% chair rent`
+                              : `${feePct}% service fee`}
+                          </div>
                           {c.capped && (
                             <div className="text-[10px] text-gold mt-1">
                               capped (raw {fmtMoney(c.rawFee)})
                             </div>
                           )}
+                          {c.minimumApplied && (
+                            <div className="text-[10px] text-gold mt-1">
+                              min applied (raw {fmtMoney(c.rawFee)})
+                            </div>
+                          )}
                         </td>
                         <td className="p-4 text-right tabular-nums text-charcoal-muted">
-                          $600.00
+                          {c.model === "rent_plus_fee" ? fmtMoney(c.rent) : "—"}
                         </td>
                         <td className="p-4 text-right tabular-nums font-medium">
                           {fmtMoney(c.total)}

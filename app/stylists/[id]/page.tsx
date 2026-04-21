@@ -11,6 +11,10 @@ type Stylist = {
   stripe_customer_id: string | null;
   payment_method_status: "none" | "pending" | "verified";
   service_fee_monthly_cap: number;
+  billing_model: "rent_plus_fee" | "percent_rent";
+  fee_rate: number;
+  weekly_rent: number;
+  minimum_remit: number | null;
 };
 
 type Invoice = {
@@ -22,6 +26,8 @@ type Invoice = {
   service_fee_amount: number;
   total_amount: number;
   status: string;
+  billing_model: "rent_plus_fee" | "percent_rent";
+  minimum_applied: boolean;
   stripe_invoice_url: string | null;
   created_at: string;
 };
@@ -125,41 +131,62 @@ export default function StylistDetailPage() {
             </div>
 
             {stats && (
-              <div className="grid grid-cols-4 gap-4 mb-12">
-                <div className="border border-charcoal/20 p-4">
-                  <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
-                    Lifetime settled
+              <>
+                <div className="mb-6 text-xs text-charcoal-muted">
+                  Billing model:{" "}
+                  <span className="text-charcoal">
+                    {stylist.billing_model === "percent_rent"
+                      ? `${((Number(stylist.fee_rate) || 0) * 100).toFixed(1).replace(/\.0$/, "")}% chair rent · min ${fmtMoney(Number(stylist.minimum_remit) || 0)}`
+                      : `$${(Number(stylist.weekly_rent) || 0).toFixed(0)}/wk + ${((Number(stylist.fee_rate) || 0) * 100).toFixed(1).replace(/\.0$/, "")}% service fee`}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-4 mb-12">
+                  <div className="border border-charcoal/20 p-4">
+                    <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
+                      Lifetime settled
+                    </div>
+                    <div className="text-2xl mt-1 tabular-nums">
+                      {fmtMoney(stats.lifetime_settled)}
+                    </div>
                   </div>
-                  <div className="text-2xl mt-1 tabular-nums">
-                    {fmtMoney(stats.lifetime_settled)}
+                  <div className="border border-charcoal/20 p-4">
+                    <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
+                      Pending
+                    </div>
+                    <div className="text-2xl mt-1 tabular-nums">
+                      {fmtMoney(stats.lifetime_pending)}
+                    </div>
+                  </div>
+                  {stylist.billing_model === "rent_plus_fee" ? (
+                    <div className="border border-charcoal/20 p-4">
+                      <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
+                        Service fee this month
+                      </div>
+                      <div className="text-2xl mt-1 tabular-nums">
+                        {fmtMoney(stats.service_fee_this_month)}
+                        <span className="text-sm text-charcoal-muted ml-1">
+                          / {fmtMoney(stylist.service_fee_monthly_cap)}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border border-charcoal/20 p-4">
+                      <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
+                        Chair rent this month
+                      </div>
+                      <div className="text-2xl mt-1 tabular-nums">
+                        {fmtMoney(stats.service_fee_this_month)}
+                      </div>
+                    </div>
+                  )}
+                  <div className="border border-charcoal/20 p-4">
+                    <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
+                      Total invoices
+                    </div>
+                    <div className="text-2xl mt-1 tabular-nums">{stats.total_invoices}</div>
                   </div>
                 </div>
-                <div className="border border-charcoal/20 p-4">
-                  <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
-                    Pending
-                  </div>
-                  <div className="text-2xl mt-1 tabular-nums">
-                    {fmtMoney(stats.lifetime_pending)}
-                  </div>
-                </div>
-                <div className="border border-charcoal/20 p-4">
-                  <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
-                    Service fee this month
-                  </div>
-                  <div className="text-2xl mt-1 tabular-nums">
-                    {fmtMoney(stats.service_fee_this_month)}
-                    <span className="text-sm text-charcoal-muted ml-1">
-                      / {fmtMoney(stylist.service_fee_monthly_cap)}
-                    </span>
-                  </div>
-                </div>
-                <div className="border border-charcoal/20 p-4">
-                  <div className="text-[10px] tracking-[0.2em] uppercase text-charcoal-muted">
-                    Total invoices
-                  </div>
-                  <div className="text-2xl mt-1 tabular-nums">{stats.total_invoices}</div>
-                </div>
-              </div>
+              </>
             )}
 
             <h3 className="text-xl mb-4">Invoice history</h3>
@@ -196,6 +223,9 @@ export default function StylistDetailPage() {
                           </td>
                           <td className="p-3 text-right tabular-nums text-charcoal-muted">
                             {fmtMoney(Number(inv.service_fee_amount))}
+                            {inv.minimum_applied && (
+                              <div className="text-[10px] text-gold mt-1">min applied</div>
+                            )}
                           </td>
                           <td className="p-3 text-right tabular-nums font-medium">
                             {fmtMoney(Number(inv.total_amount))}

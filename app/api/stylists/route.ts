@@ -46,10 +46,22 @@ export async function POST(req: NextRequest) {
   const authFail = await checkAuthOrFail();
   if (authFail) return authFail;
 
-  const { name, email } = await req.json();
+  const body = await req.json();
+  const { name, email, billing_model, fee_rate, weekly_rent, minimum_remit } = body;
   if (!name || !email) {
     return NextResponse.json({ error: "Name and email required" }, { status: 400 });
   }
+
+  const model = billing_model === "percent_rent" ? "percent_rent" : "rent_plus_fee";
+  const resolvedFeeRate =
+    fee_rate != null ? Number(fee_rate) : model === "percent_rent" ? 0.35 : 0.075;
+  const resolvedRent = weekly_rent != null ? Number(weekly_rent) : 600;
+  const resolvedMin =
+    model === "percent_rent"
+      ? minimum_remit != null
+        ? Number(minimum_remit)
+        : 600
+      : null;
 
   // Create Stripe customer
   const customer = await stripe.customers.create({
@@ -65,6 +77,10 @@ export async function POST(req: NextRequest) {
       email,
       stripe_customer_id: customer.id,
       payment_method_status: "none",
+      billing_model: model,
+      fee_rate: resolvedFeeRate,
+      weekly_rent: resolvedRent,
+      minimum_remit: resolvedMin,
     })
     .select()
     .single();
@@ -81,7 +97,8 @@ export async function PATCH(req: NextRequest) {
   const authFail = await checkAuthOrFail();
   if (authFail) return authFail;
 
-  const { id, name, email } = await req.json();
+  const body = await req.json();
+  const { id, name, email, billing_model, fee_rate, weekly_rent, minimum_remit } = body;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
   const { data: existing } = await supabaseAdmin
@@ -90,13 +107,28 @@ export async function PATCH(req: NextRequest) {
     .eq("id", id)
     .single();
 
-  if (existing?.stripe_customer_id) {
+  if (existing?.stripe_customer_id && (name !== undefined || email !== undefined)) {
     await stripe.customers.update(existing.stripe_customer_id, { name, email });
+  }
+
+  const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+  if (name !== undefined) updates.name = name;
+  if (email !== undefined) updates.email = email;
+  if (billing_model !== undefined) {
+    updates.billing_model =
+      billing_model === "percent_rent" ? "percent_rent" : "rent_plus_fee";
+    // When switching to rent_plus_fee, clear the minimum; when to percent_rent, default if unset
+    if (updates.billing_model === "rent_plus_fee") updates.minimum_remit = null;
+  }
+  if (fee_rate !== undefined) updates.fee_rate = Number(fee_rate);
+  if (weekly_rent !== undefined) updates.weekly_rent = Number(weekly_rent);
+  if (minimum_remit !== undefined) {
+    updates.minimum_remit = minimum_remit === null ? null : Number(minimum_remit);
   }
 
   const { data, error } = await supabaseAdmin
     .from("stylists")
-    .update({ name, email, updated_at: new Date().toISOString() })
+    .update(updates)
     .eq("id", id)
     .select()
     .single();

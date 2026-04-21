@@ -8,6 +8,10 @@ create table if not exists stylists (
   payment_method_id text,
   payment_method_status text not null default 'none', -- 'none' | 'pending' | 'verified'
   service_fee_monthly_cap numeric(10,2) not null default 1000,
+  billing_model text not null default 'rent_plus_fee', -- 'rent_plus_fee' | 'percent_rent'
+  fee_rate numeric(5,4) not null default 0.075,
+  weekly_rent numeric(10,2) not null default 600,
+  minimum_remit numeric(10,2),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -22,6 +26,8 @@ create table if not exists invoices (
   service_fee_rate numeric(5,4) not null default 0.075,
   service_fee_amount numeric(10,2) not null,
   total_amount numeric(10,2) not null,
+  billing_model text not null default 'rent_plus_fee',
+  minimum_applied boolean not null default false,
   stripe_invoice_id text,
   stripe_invoice_url text,
   status text not null default 'draft', -- 'draft' | 'sent' | 'processing' | 'paid' | 'failed' | 'void'

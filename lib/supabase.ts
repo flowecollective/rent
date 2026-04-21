@@ -12,6 +12,8 @@ export const supabaseAdmin = createClient(
   }
 );
 
+export type BillingModel = "rent_plus_fee" | "percent_rent";
+
 export type Stylist = {
   id: string;
   name: string;
@@ -20,6 +22,10 @@ export type Stylist = {
   payment_method_id: string | null;
   payment_method_status: "none" | "pending" | "verified";
   service_fee_monthly_cap: number;
+  billing_model: BillingModel;
+  fee_rate: number;
+  weekly_rent: number;
+  minimum_remit: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -34,9 +40,11 @@ export type Invoice = {
   service_fee_rate: number;
   service_fee_amount: number;
   total_amount: number;
+  billing_model: BillingModel;
+  minimum_applied: boolean;
   stripe_invoice_id: string | null;
   stripe_invoice_url: string | null;
-  status: "draft" | "sent" | "processing" | "paid" | "failed";
+  status: "draft" | "sent" | "processing" | "paid" | "failed" | "void";
   error_message: string | null;
   created_at: string;
   updated_at: string;

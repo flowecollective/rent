@@ -202,7 +202,7 @@ export default function StylistDetailPage() {
                           </td>
                           <td className="p-3 capitalize">
                             <span className={`status-dot status-${inv.status}`}></span>
-                            {inv.status}
+                            {inv.status === "sent" ? "pending" : inv.status}
                           </td>
                           <td className="p-3">
                             {inv.stripe_invoice_url ? (

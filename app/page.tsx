@@ -371,7 +371,7 @@ export default function HomePage() {
                         </td>
                         <td className="p-4 capitalize">
                           <span className={`status-dot status-${inv.status}`}></span>
-                          {inv.status}
+                          {inv.status === "sent" ? "pending" : inv.status}
                         </td>
                         <td className="p-4">
                           {inv.stripe_invoice_url ? (

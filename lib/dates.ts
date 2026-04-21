@@ -38,3 +38,14 @@ export function formatCurrency(amount: number): string {
     currency: "USD",
   }).format(amount);
 }
+
+// Given any ISO date (YYYY-MM-DD), return [first day of that month, first day of next month]
+// as ISO dates. Used for querying invoices that fall in a given month by week_end.
+export function monthRangeContaining(isoDate: string): { monthStart: string; nextMonthStart: string } {
+  const [y, m] = isoDate.split("-").map(Number);
+  const monthStart = `${y}-${String(m).padStart(2, "0")}-01`;
+  const nextY = m === 12 ? y + 1 : y;
+  const nextM = m === 12 ? 1 : m + 1;
+  const nextMonthStart = `${nextY}-${String(nextM).padStart(2, "0")}-01`;
+  return { monthStart, nextMonthStart };
+}

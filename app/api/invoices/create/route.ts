@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { stripe } from "@/lib/stripe";
 import { checkAuthOrFail } from "@/lib/auth";
+import { monthRangeContaining } from "@/lib/dates";
 
 type Entry = { stylist_id: string; net_service_revenue: number };
 
@@ -31,9 +32,7 @@ async function processOne(
 ): Promise<{ stylistId: string; ok: boolean; message: string }> {
   const rev = Math.max(0, Number(entry.net_service_revenue) || 0);
   const rent = 600;
-  const commissionRate = 0.075;
-  const commission = Math.round(rev * commissionRate * 100) / 100;
-  const total = rent + commission;
+  const serviceFeeRate = 0.075;
 
   // Load stylist
   const { data: stylist, error: sErr } = await supabaseAdmin
@@ -53,6 +52,28 @@ async function processOne(
     };
   }
 
+  // Apply monthly service-fee cap. Count only invoices already billed
+  // (sent/processing/paid) whose week_end falls in the same calendar month
+  // as this invoice's week_end.
+  const { monthStart, nextMonthStart } = monthRangeContaining(week_end);
+  const { data: priorInvoices } = await supabaseAdmin
+    .from("invoices")
+    .select("service_fee_amount")
+    .eq("stylist_id", stylist.id)
+    .in("status", ["sent", "processing", "paid"])
+    .gte("week_end", monthStart)
+    .lt("week_end", nextMonthStart);
+
+  const paidThisMonth = (priorInvoices || []).reduce(
+    (sum, r) => sum + Number(r.service_fee_amount),
+    0
+  );
+  const cap = Number(stylist.service_fee_monthly_cap) || 1000;
+  const remainingCap = Math.max(0, cap - paidThisMonth);
+  const rawServiceFee = Math.round(rev * serviceFeeRate * 100) / 100;
+  const serviceFee = Math.min(rawServiceFee, remainingCap);
+  const total = rent + serviceFee;
+
   // Create draft invoice row in our DB first
   const { data: invoiceRow, error: iErr } = await supabaseAdmin
     .from("invoices")
@@ -62,8 +83,8 @@ async function processOne(
       week_end,
       net_service_revenue: rev,
       rent_amount: rent,
-      commission_rate: commissionRate,
-      commission_amount: commission,
+      service_fee_rate: serviceFeeRate,
+      service_fee_amount: serviceFee,
       total_amount: total,
       status: "draft",
     })
@@ -85,12 +106,16 @@ async function processOne(
       description: `Weekly chair rental — week of ${weekLabel}`,
     });
 
-    if (commission > 0) {
+    if (serviceFee > 0) {
+      const capped = serviceFee < rawServiceFee;
+      const description = capped
+        ? `Service fee (capped at $${cap.toFixed(0)}/mo — $${serviceFee.toFixed(2)} of $${rawServiceFee.toFixed(2)} due) — week of ${weekLabel}`
+        : `Service fee (7.5% of $${rev.toFixed(2)} net services) — week of ${weekLabel}`;
       await stripe.invoiceItems.create({
         customer: stylist.stripe_customer_id,
-        amount: Math.round(commission * 100),
+        amount: Math.round(serviceFee * 100),
         currency: "usd",
-        description: `Commission (7.5% of $${rev.toFixed(2)} service revenue) — week of ${weekLabel}`,
+        description,
       });
     }
 

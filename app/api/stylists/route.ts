@@ -2,18 +2,44 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { stripe } from "@/lib/stripe";
 import { checkAuthOrFail } from "@/lib/auth";
+import { monthRangeContaining } from "@/lib/dates";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const authFail = await checkAuthOrFail();
   if (authFail) return authFail;
 
-  const { data, error } = await supabaseAdmin
+  const { data: stylists, error } = await supabaseAdmin
     .from("stylists")
     .select("*")
     .order("created_at", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ stylists: data });
+
+  // Optional: ?month=YYYY-MM-DD (any date inside the target month)
+  // Returns service_fee_paid_this_month per stylist based on week_end month.
+  const monthParam = req.nextUrl.searchParams.get("month");
+  const paidByStylist: Record<string, number> = {};
+  if (monthParam && stylists && stylists.length > 0) {
+    const { monthStart, nextMonthStart } = monthRangeContaining(monthParam);
+    const { data: invoices } = await supabaseAdmin
+      .from("invoices")
+      .select("stylist_id, service_fee_amount")
+      .in("status", ["sent", "processing", "paid"])
+      .gte("week_end", monthStart)
+      .lt("week_end", nextMonthStart);
+
+    for (const row of invoices || []) {
+      const id = row.stylist_id as string;
+      paidByStylist[id] = (paidByStylist[id] || 0) + Number(row.service_fee_amount);
+    }
+  }
+
+  const enriched = (stylists || []).map((s) => ({
+    ...s,
+    service_fee_paid_this_month: paidByStylist[s.id] || 0,
+  }));
+
+  return NextResponse.json({ stylists: enriched });
 }
 
 export async function POST(req: NextRequest) {

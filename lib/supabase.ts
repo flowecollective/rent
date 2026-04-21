@@ -19,6 +19,7 @@ export type Stylist = {
   stripe_customer_id: string | null;
   payment_method_id: string | null;
   payment_method_status: "none" | "pending" | "verified";
+  service_fee_monthly_cap: number;
   created_at: string;
   updated_at: string;
 };
@@ -30,8 +31,8 @@ export type Invoice = {
   week_end: string;
   net_service_revenue: number;
   rent_amount: number;
-  commission_rate: number;
-  commission_amount: number;
+  service_fee_rate: number;
+  service_fee_amount: number;
   total_amount: number;
   stripe_invoice_id: string | null;
   stripe_invoice_url: string | null;

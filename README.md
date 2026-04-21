@@ -3,7 +3,9 @@
 Internal weekly invoicing tool for chair rental at Flowe Collective.
 
 - Rent: $600/week flat
-- Commission: 7.5% of net service revenue (service sales − discounts − refunds; tips excluded via Tippy)
+- Service fee: 7.5% of net service revenue (service sales − discounts − refunds; tips excluded via Tippy), capped at $1,000/stylist/month
+  - "Month" = calendar month the work week *ends in*. A week spanning months counts entirely toward its ending month.
+  - Cap counts invoices in `sent | processing | paid` status. Failed invoices don't consume the cap.
 - Payment: ACH auto-charge via Stripe (cheaper than card; ~$5 max per invoice vs ~$26)
 - Stack: Next.js 15, Supabase, Stripe, Vercel
 - Access: single password gate (no per-user auth — it's just the admin)

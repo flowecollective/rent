@@ -23,7 +23,8 @@ input[type="text"],
 input[type="email"],
 input[type="number"],
 input[type="password"],
-input[type="date"] {
+input[type="date"],
+select {
   background: #FAF6F0;
   border: 1px solid #1A1A1A;
   padding: 0.625rem 0.875rem;
@@ -33,7 +34,18 @@ input[type="date"] {
   transition: border-color 0.15s;
 }
 
-input:focus {
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='%231A1A1A'><path d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  background-size: 10px 6px;
+  padding-right: 2.25rem;
+}
+
+input:focus,
+select:focus {
   outline: none;
   border-color: #C9A96E;
 }

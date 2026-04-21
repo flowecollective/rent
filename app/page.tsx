@@ -131,7 +131,7 @@ export default function HomePage() {
       <header className="hairline">
         <div className="max-w-5xl mx-auto px-8 py-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl leading-none">Flowe</h1>
+            <h1 className="text-3xl leading-none">Flowe Collective</h1>
             <p className="text-[10px] tracking-[0.3em] uppercase text-charcoal-muted mt-1">
               Chair Rental · Invoicing
             </p>

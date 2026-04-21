@@ -31,7 +31,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-12">
-          <h1 className="text-4xl mb-2">Flowe</h1>
+          <h1 className="text-4xl mb-2">Flowe Collective</h1>
           <p className="text-xs tracking-[0.3em] uppercase text-charcoal-muted">
             Rent
           </p>

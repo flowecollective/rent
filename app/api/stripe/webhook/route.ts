@@ -102,6 +102,15 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      case "invoice.voided": {
+        const inv = event.data.object as Stripe.Invoice;
+        await supabaseAdmin
+          .from("invoices")
+          .update({ status: "void", updated_at: new Date().toISOString() })
+          .eq("stripe_invoice_id", inv.id);
+        break;
+      }
+
       default:
         // Ignore other events
         break;

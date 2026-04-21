@@ -54,6 +54,7 @@ export default function HomePage() {
   >(null);
   const [recent, setRecent] = useState<RecentInvoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [voiding, setVoiding] = useState<string | null>(null);
 
   async function loadData(monthRef: string) {
     setLoading(true);
@@ -118,6 +119,23 @@ export default function HomePage() {
     setResults(data.results || []);
     setSubmitting(false);
     setRevenue({});
+    loadData(week.end);
+  }
+
+  async function voidInvoice(id: string) {
+    if (!confirm("Void this invoice? The stylist will no longer be able to pay it.")) return;
+    setVoiding(id);
+    const res = await fetch("/api/invoices/void", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invoice_id: id }),
+    });
+    setVoiding(null);
+    if (!res.ok) {
+      const d = await res.json();
+      alert(d.error || "Void failed");
+      return;
+    }
     loadData(week.end);
   }
 
@@ -329,38 +347,62 @@ export default function HomePage() {
                     <th className="text-right p-4 font-normal">Amount</th>
                     <th className="text-left p-4 font-normal">Status</th>
                     <th className="text-left p-4 font-normal">Link</th>
+                    <th className="text-right p-4 font-normal">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recent.map((inv) => (
-                    <tr key={inv.id} className="hairline last:border-b-0">
-                      <td className="p-4">{inv.stylist_name}</td>
-                      <td className="p-4 text-charcoal-muted">
-                        {inv.week_start} – {inv.week_end}
-                      </td>
-                      <td className="p-4 text-right tabular-nums">
-                        {fmtMoney(inv.total_amount)}
-                      </td>
-                      <td className="p-4 capitalize">
-                        <span className={`status-dot status-${inv.status}`}></span>
-                        {inv.status}
-                      </td>
-                      <td className="p-4">
-                        {inv.stripe_invoice_url ? (
-                          <a
-                            href={inv.stripe_invoice_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="underline text-xs"
+                  {recent.map((inv) => {
+                    const canVoid = inv.status === "sent" || inv.status === "processing";
+                    return (
+                      <tr key={inv.id} className="hairline last:border-b-0">
+                        <td className="p-4">
+                          <Link
+                            href={`/stylists/${inv.stylist_id}`}
+                            className="hover:underline"
                           >
-                            View
-                          </a>
-                        ) : (
-                          <span className="text-charcoal-muted text-xs">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                            {inv.stylist_name}
+                          </Link>
+                        </td>
+                        <td className="p-4 text-charcoal-muted">
+                          {inv.week_start} – {inv.week_end}
+                        </td>
+                        <td className="p-4 text-right tabular-nums">
+                          {fmtMoney(inv.total_amount)}
+                        </td>
+                        <td className="p-4 capitalize">
+                          <span className={`status-dot status-${inv.status}`}></span>
+                          {inv.status}
+                        </td>
+                        <td className="p-4">
+                          {inv.stripe_invoice_url ? (
+                            <a
+                              href={inv.stripe_invoice_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="underline text-xs"
+                            >
+                              View
+                            </a>
+                          ) : (
+                            <span className="text-charcoal-muted text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-right">
+                          {canVoid ? (
+                            <button
+                              onClick={() => voidInvoice(inv.id)}
+                              disabled={voiding === inv.id}
+                              className="btn-secondary text-xs"
+                            >
+                              {voiding === inv.id ? "…" : "Void"}
+                            </button>
+                          ) : (
+                            <span className="text-charcoal-muted text-xs">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

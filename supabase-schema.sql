@@ -24,7 +24,7 @@ create table if not exists invoices (
   total_amount numeric(10,2) not null,
   stripe_invoice_id text,
   stripe_invoice_url text,
-  status text not null default 'draft', -- 'draft' | 'sent' | 'processing' | 'paid' | 'failed'
+  status text not null default 'draft', -- 'draft' | 'sent' | 'processing' | 'paid' | 'failed' | 'void'
   error_message text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

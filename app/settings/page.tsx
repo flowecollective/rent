@@ -166,7 +166,9 @@ export default function SettingsPage() {
                   {stylists.map((s) => (
                     <tr key={s.id} className="hairline last:border-b-0">
                       <td className="p-4">
-                        <div className="font-medium">{s.name}</div>
+                        <Link href={`/stylists/${s.id}`} className="font-medium hover:underline">
+                          {s.name}
+                        </Link>
                         <div className="text-xs text-charcoal-muted">{s.email}</div>
                       </td>
                       <td className="p-4 text-sm">
@@ -177,6 +179,12 @@ export default function SettingsPage() {
                       </td>
                       <td className="p-4 text-right">
                         <div className="flex gap-2 justify-end">
+                          <Link
+                            href={`/stylists/${s.id}`}
+                            className="btn-secondary text-xs"
+                          >
+                            History
+                          </Link>
                           <button
                             onClick={() => sendSetupLink(s)}
                             className="btn-secondary text-xs"

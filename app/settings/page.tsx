@@ -184,6 +184,22 @@ export default function SettingsPage() {
     if (res.ok) load();
   }
 
+  async function refreshStatus(stylist: Stylist) {
+    const res = await fetch(`/api/stylists/${stylist.id}/refresh-status`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMsg({ type: "err", text: data.error || "Refresh failed" });
+      return;
+    }
+    setMsg({
+      type: "ok",
+      text: `${stylist.name}: ${data.detail || `status now ${data.new_status}`}`,
+    });
+    load();
+  }
+
   async function sendSetupLink(stylist: Stylist) {
     const res = await fetch("/api/stripe/setup-link", {
       method: "POST",
@@ -416,6 +432,14 @@ export default function SettingsPage() {
                               ? "Resend setup"
                               : "Send setup link"}
                           </button>
+                          {s.payment_method_status !== "verified" && (
+                            <button
+                              onClick={() => refreshStatus(s)}
+                              className="btn-secondary text-xs"
+                            >
+                              Refresh
+                            </button>
+                          )}
                           <button
                             onClick={() => removeStylist(s.id, s.name)}
                             className="btn-secondary text-xs"

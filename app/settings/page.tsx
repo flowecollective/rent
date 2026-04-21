@@ -147,7 +147,7 @@ export default function SettingsPage() {
 
         {/* Roster */}
         <section>
-          <h3 className="text-xl mb-4">Active roster</h3>
+          <h3 className="text-xl mb-4">Active Roster</h3>
           {loading ? (
             <p className="text-charcoal-muted text-sm">Loading…</p>
           ) : stylists.length === 0 ? (

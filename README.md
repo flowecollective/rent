@@ -99,8 +99,10 @@ Settings → click "Send setup link" next to their name → copy the URL → tex
 2. Enter each stylist's net service revenue from Boulevard
 3. Review totals
 4. Click "Create & send invoices"
-5. Each stylist receives an email from Stripe with a link to a hosted invoice page. They review line items and click "Pay" to initiate ACH from their saved bank. 2-day payment window.
-6. After they pay, ACH takes 3–5 business days to clear. Invoice status: `sent` → `processing` → `paid` (or `failed`), updated by webhook.
+5. Each stylist receives an email from Stripe with a link to a hosted invoice page. They review line items and click "Pay". If they haven't linked a bank yet, Stripe lets them link inline on the invoice page (Plaid-powered) and authorize the ACH in one flow. 2-day payment window.
+6. After they pay, ACH takes 3–5 business days to clear. Invoice status: `sent` → `paid` (or `failed`), updated by webhook. The stylist's `payment_method_status` is also auto-flipped to `verified` once their first invoice is paid.
+
+The proactive "Send setup link" path in Settings is still available for stylists who want to link a bank ahead of receiving an invoice.
 
 ### Testing with fake ACH (test mode only)
 

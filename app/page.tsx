@@ -128,8 +128,10 @@ export default function HomePage() {
   }
 
   const grandTotal = stylists.reduce((sum, s) => sum + calc(s).total, 0);
+  // Any stylist with revenue entered is invoiceable. Bank linking happens
+  // when they open the invoice link in their email.
   const readyStylists = stylists.filter(
-    (s) => s.payment_method_status === "verified" && (revenue[s.id] || "").trim() !== ""
+    (s) => (revenue[s.id] || "").trim() !== ""
   );
 
   async function submitInvoices() {
@@ -216,7 +218,8 @@ export default function HomePage() {
               <p className="text-sm text-charcoal-muted">
                 Enter each stylist's net service revenue. Totals follow each stylist's billing
                 model (rent + fee, or % chair rent with a minimum). Each stylist receives an
-                emailed invoice with 2 days to review and pay via ACH.
+                emailed invoice with 2 days to review and pay via ACH — they can link their
+                bank inline on the invoice page if they haven't already.
               </p>
             </div>
           </div>
@@ -271,7 +274,6 @@ export default function HomePage() {
                 <tbody>
                   {stylists.map((s) => {
                     const c = calc(s);
-                    const ready = s.payment_method_status === "verified";
                     const feePct = (c.feeRate * 100).toFixed(1).replace(/\.0$/, "");
                     return (
                       <tr key={s.id} className="hairline last:border-b-0">
@@ -290,9 +292,9 @@ export default function HomePage() {
                         </td>
                         <td className="p-4 text-xs">
                           <span className={`status-dot status-${s.payment_method_status}`}></span>
-                          {s.payment_method_status === "verified" && "Ready"}
-                          {s.payment_method_status === "pending" && "Pending verification"}
-                          {s.payment_method_status === "none" && "Not set up"}
+                          {s.payment_method_status === "verified" && "Bank linked"}
+                          {s.payment_method_status === "pending" && "Bank pending"}
+                          {s.payment_method_status === "none" && "Will link via invoice"}
                         </td>
                         <td className="p-4 text-right">
                           <input
@@ -304,7 +306,6 @@ export default function HomePage() {
                             value={revenue[s.id] || ""}
                             onChange={(e) => setRev(s.id, e.target.value)}
                             className="w-32 text-right"
-                            disabled={!ready}
                           />
                         </td>
                         <td className="p-4 text-right tabular-nums text-charcoal-muted">
@@ -352,12 +353,7 @@ export default function HomePage() {
           {stylists.length > 0 && (
             <div className="mt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <p className="text-sm text-charcoal-muted">
-                {readyStylists.length} of {stylists.length} ready to invoice
-                {stylists.some((s) => s.payment_method_status !== "verified") && (
-                  <span className="ml-2">
-                    · <Link href="/settings" className="underline">Send setup links</Link>
-                  </span>
-                )}
+                {readyStylists.length} of {stylists.length} with revenue entered
               </p>
               <button
                 className="btn-primary w-full md:w-auto"

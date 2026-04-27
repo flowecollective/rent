@@ -50,13 +50,16 @@ async function processOne(
   if (sErr || !stylist) {
     return { stylistId: entry.stylist_id, ok: false, message: "Stylist not found" };
   }
-  if (!stylist.stripe_customer_id || stylist.payment_method_status !== "verified") {
+  if (!stylist.stripe_customer_id) {
     return {
       stylistId: entry.stylist_id,
       ok: false,
-      message: "Payment method not verified",
+      message: "No Stripe customer",
     };
   }
+  // Note: we no longer require payment_method_status === "verified". When the
+  // stylist opens the invoice link, Stripe's hosted page lets them link a
+  // bank inline. The webhook flips them to verified once they pay.
 
   const weekLabel = `${week_start} to ${week_end}`;
   const model =

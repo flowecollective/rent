@@ -86,6 +86,20 @@ export async function POST(req: NextRequest) {
           .from("invoices")
           .update({ status: "paid", updated_at: new Date().toISOString() })
           .eq("stripe_invoice_id", inv.id);
+
+        // Stylist successfully paid → they have a working bank linked.
+        // Promote their status to verified so future invoices show "Bank linked".
+        const customerId =
+          typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+        if (customerId) {
+          await supabaseAdmin
+            .from("stylists")
+            .update({
+              payment_method_status: "verified",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("stripe_customer_id", customerId);
+        }
         break;
       }
 

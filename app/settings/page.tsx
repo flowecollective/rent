@@ -61,6 +61,14 @@ export default function SettingsPage() {
   const [linkModal, setLinkModal] = useState<{ name: string; url: string } | null>(null);
   const [editing, setEditing] = useState<EditForm | null>(null);
   const [saving, setSaving] = useState(false);
+  const [busyStylist, setBusyStylist] = useState<string | null>(null);
+
+  // Auto-dismiss toast after 5 seconds
+  useEffect(() => {
+    if (!msg) return;
+    const t = setTimeout(() => setMsg(null), 5000);
+    return () => clearTimeout(t);
+  }, [msg]);
 
   async function load() {
     setLoading(true);
@@ -185,44 +193,54 @@ export default function SettingsPage() {
   }
 
   async function refreshStatus(stylist: Stylist) {
-    const res = await fetch(`/api/stylists/${stylist.id}/refresh-status`, {
-      method: "POST",
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMsg({ type: "err", text: data.error || "Refresh failed" });
-      return;
+    setBusyStylist(stylist.id);
+    try {
+      const res = await fetch(`/api/stylists/${stylist.id}/refresh-status`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg({ type: "err", text: data.error || "Refresh failed" });
+        return;
+      }
+      setMsg({
+        type: "ok",
+        text: `${stylist.name}: ${data.detail || `status now ${data.new_status}`}`,
+      });
+      load();
+    } finally {
+      setBusyStylist(null);
     }
-    setMsg({
-      type: "ok",
-      text: `${stylist.name}: ${data.detail || `status now ${data.new_status}`}`,
-    });
-    load();
   }
 
   async function sendSetupLink(stylist: Stylist) {
-    const res = await fetch("/api/stripe/setup-link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stylist_id: stylist.id }),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.url) {
-      setMsg({ type: "err", text: data.error || "Failed to generate link" });
-      return;
-    }
-    if (data.emailed) {
-      setMsg({ type: "ok", text: `Setup link emailed to ${stylist.email}` });
+    setBusyStylist(stylist.id);
+    try {
+      const res = await fetch("/api/stripe/setup-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stylist_id: stylist.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setMsg({ type: "err", text: data.error || "Failed to generate link" });
+        return;
+      }
+      if (data.emailed) {
+        setMsg({ type: "ok", text: `Setup link emailed to ${stylist.email}` });
+        load();
+        return;
+      }
+      // Fall back to copy/paste modal if email send failed
+      setMsg({
+        type: "err",
+        text: `Email to ${stylist.email} failed${data.email_error ? `: ${data.email_error}` : ""}. Copy the link below and send manually.`,
+      });
+      setLinkModal({ name: stylist.name, url: data.url });
       load();
-      return;
+    } finally {
+      setBusyStylist(null);
     }
-    // Fall back to copy/paste modal if email send failed
-    setMsg({
-      type: "err",
-      text: `Email to ${stylist.email} failed${data.email_error ? `: ${data.email_error}` : ""}. Copy the link below and send manually.`,
-    });
-    setLinkModal({ name: stylist.name, url: data.url });
-    load();
   }
 
   function modelLabel(m: BillingModel) {
@@ -364,11 +382,6 @@ export default function SettingsPage() {
               </button>
             </div>
           </form>
-          {msg && (
-            <p className={`mt-4 text-sm ${msg.type === "ok" ? "text-[#2D7A4F]" : "text-[#B44545]"}`}>
-              {msg.text}
-            </p>
-          )}
         </section>
 
         {/* Roster */}
@@ -426,18 +439,22 @@ export default function SettingsPage() {
                           </Link>
                           <button
                             onClick={() => sendSetupLink(s)}
+                            disabled={busyStylist === s.id}
                             className="btn-secondary text-xs"
                           >
-                            {s.payment_method_status === "verified"
+                            {busyStylist === s.id
+                              ? "Sending…"
+                              : s.payment_method_status === "verified"
                               ? "Resend setup"
                               : "Send setup link"}
                           </button>
                           {s.payment_method_status !== "verified" && (
                             <button
                               onClick={() => refreshStatus(s)}
+                              disabled={busyStylist === s.id}
                               className="btn-secondary text-xs"
                             >
-                              Refresh
+                              {busyStylist === s.id ? "…" : "Refresh"}
                             </button>
                           )}
                           <button
@@ -596,6 +613,29 @@ export default function SettingsPage() {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating toast */}
+      {msg && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] max-w-md w-[calc(100%-2rem)]">
+          <div
+            className={`bg-cream border px-4 py-3 shadow-lg text-sm flex items-start gap-3 ${
+              msg.type === "ok" ? "border-[#2D7A4F]" : "border-[#B44545]"
+            }`}
+          >
+            <span className={msg.type === "ok" ? "text-[#2D7A4F]" : "text-[#B44545]"}>
+              {msg.type === "ok" ? "✓" : "!"}
+            </span>
+            <span className="flex-1 text-charcoal">{msg.text}</span>
+            <button
+              onClick={() => setMsg(null)}
+              className="text-charcoal-muted hover:text-charcoal text-xs"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}

@@ -192,15 +192,23 @@ export default function SettingsPage() {
     if (res.ok) load();
   }
 
+  async function safeJson(res: Response): Promise<any> {
+    try {
+      return await res.json();
+    } catch {
+      return { error: `Non-JSON response (status ${res.status})` };
+    }
+  }
+
   async function refreshStatus(stylist: Stylist) {
     setBusyStylist(stylist.id);
     try {
       const res = await fetch(`/api/stylists/${stylist.id}/refresh-status`, {
         method: "POST",
       });
-      const data = await res.json();
+      const data = await safeJson(res);
       if (!res.ok) {
-        setMsg({ type: "err", text: data.error || "Refresh failed" });
+        setMsg({ type: "err", text: data.error || `Refresh failed (${res.status})` });
         return;
       }
       setMsg({
@@ -208,6 +216,8 @@ export default function SettingsPage() {
         text: `${stylist.name}: ${data.detail || `status now ${data.new_status}`}`,
       });
       load();
+    } catch (err: any) {
+      setMsg({ type: "err", text: `Refresh failed: ${err?.message || "network error"}` });
     } finally {
       setBusyStylist(null);
     }
@@ -221,9 +231,9 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stylist_id: stylist.id }),
       });
-      const data = await res.json();
+      const data = await safeJson(res);
       if (!res.ok || !data.url) {
-        setMsg({ type: "err", text: data.error || "Failed to generate link" });
+        setMsg({ type: "err", text: data.error || `Failed to generate link (${res.status})` });
         return;
       }
       if (data.emailed) {
@@ -238,6 +248,11 @@ export default function SettingsPage() {
       });
       setLinkModal({ name: stylist.name, url: data.url });
       load();
+    } catch (err: any) {
+      setMsg({
+        type: "err",
+        text: `Send failed: ${err?.message || "network error / timeout"}`,
+      });
     } finally {
       setBusyStylist(null);
     }

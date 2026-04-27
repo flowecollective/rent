@@ -5,85 +5,102 @@ import { checkAuthOrFail } from "@/lib/auth";
 import { sendMail } from "@/lib/mailer";
 
 export async function POST(req: NextRequest) {
-  const authFail = await checkAuthOrFail();
-  if (authFail) return authFail;
+  try {
+    const authFail = await checkAuthOrFail();
+    if (authFail) return authFail;
 
-  const { stylist_id } = await req.json();
-  if (!stylist_id) {
-    return NextResponse.json({ error: "stylist_id required" }, { status: 400 });
-  }
-
-  const { data: stylist, error } = await supabaseAdmin
-    .from("stylists")
-    .select("*")
-    .eq("id", stylist_id)
-    .single();
-
-  if (error || !stylist) {
-    return NextResponse.json({ error: "Stylist not found" }, { status: 404 });
-  }
-  if (!stylist.stripe_customer_id) {
-    return NextResponse.json({ error: "No Stripe customer" }, { status: 400 });
-  }
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-  // Use Stripe Checkout in "setup" mode for ACH - supports Plaid instant
-  // verification and microdeposit fallback automatically.
-  const session = await stripe.checkout.sessions.create({
-    mode: "setup",
-    customer: stylist.stripe_customer_id,
-    payment_method_types: ["us_bank_account"],
-    payment_method_options: {
-      us_bank_account: {
-        // "ownership" lets Stripe pull the account holder's name from the
-        // bank, populating billing_details.name on the payment method.
-        // Without it, ACH PMs can land in a state where they can't be set
-        // as the customer's default invoice payment method.
-        financial_connections: { permissions: ["payment_method", "ownership"] },
-        verification_method: "automatic",
-      },
-    },
-    success_url: `${appUrl}/setup/success?sid=${stylist.id}`,
-    cancel_url: `${appUrl}/setup/cancel`,
-  });
-
-  // Mark as pending
-  await supabaseAdmin
-    .from("stylists")
-    .update({ payment_method_status: "pending", updated_at: new Date().toISOString() })
-    .eq("id", stylist.id);
-
-  // If the stylist has previously attempted setup, treat this as a resend
-  // so the email body tells them to reconnect (works around an earlier flow
-  // that didn't capture the account holder name).
-  const isResend = stylist.payment_method_status !== "none";
-
-  let emailed = false;
-  let emailError: string | null = null;
-  if (session.url && stylist.email) {
-    try {
-      await sendMail({
-        to: stylist.email,
-        subject: isResend
-          ? "Quick reconnect for your Flowe Collective ACH setup"
-          : "Connect your bank — Flowe Collective",
-        text: buildEmailText(stylist.name, session.url, isResend),
-        html: buildEmailHtml(stylist.name, session.url, isResend),
-      });
-      emailed = true;
-    } catch (err: any) {
-      emailError = err?.message || "Email send failed";
-      console.error("Setup-link email failed:", err);
+    const { stylist_id } = await req.json();
+    if (!stylist_id) {
+      return NextResponse.json({ error: "stylist_id required" }, { status: 400 });
     }
-  }
 
-  return NextResponse.json({
-    url: session.url,
-    session_id: session.id,
-    emailed,
-    email_error: emailError,
-  });
+    const { data: stylist, error } = await supabaseAdmin
+      .from("stylists")
+      .select("*")
+      .eq("id", stylist_id)
+      .single();
+
+    if (error || !stylist) {
+      return NextResponse.json({ error: "Stylist not found" }, { status: 404 });
+    }
+    if (!stylist.stripe_customer_id) {
+      return NextResponse.json({ error: "No Stripe customer" }, { status: 400 });
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    // Use Stripe Checkout in "setup" mode for ACH - supports Plaid instant
+    // verification and microdeposit fallback automatically.
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode: "setup",
+        customer: stylist.stripe_customer_id,
+        payment_method_types: ["us_bank_account"],
+        payment_method_options: {
+          us_bank_account: {
+            // "ownership" lets Stripe pull the account holder's name from the
+            // bank, populating billing_details.name on the payment method.
+            // Without it, ACH PMs can land in a state where they can't be set
+            // as the customer's default invoice payment method.
+            financial_connections: { permissions: ["payment_method", "ownership"] },
+            verification_method: "automatic",
+          },
+        },
+        success_url: `${appUrl}/setup/success?sid=${stylist.id}`,
+        cancel_url: `${appUrl}/setup/cancel`,
+      });
+    } catch (err: any) {
+      console.error("Stripe checkout session creation failed:", err);
+      return NextResponse.json(
+        { error: `Stripe error: ${err?.message || "checkout session failed"}` },
+        { status: 500 }
+      );
+    }
+
+    // Mark as pending
+    await supabaseAdmin
+      .from("stylists")
+      .update({ payment_method_status: "pending", updated_at: new Date().toISOString() })
+      .eq("id", stylist.id);
+
+    // If the stylist has previously attempted setup, treat this as a resend
+    // so the email body tells them to reconnect (works around an earlier flow
+    // that didn't capture the account holder name).
+    const isResend = stylist.payment_method_status !== "none";
+
+    let emailed = false;
+    let emailError: string | null = null;
+    if (session.url && stylist.email) {
+      try {
+        await sendMail({
+          to: stylist.email,
+          subject: isResend
+            ? "Quick reconnect for your Flowe Collective ACH setup"
+            : "Connect your bank — Flowe Collective",
+          text: buildEmailText(stylist.name, session.url, isResend),
+          html: buildEmailHtml(stylist.name, session.url, isResend),
+        });
+        emailed = true;
+      } catch (err: any) {
+        emailError = err?.message || "Email send failed";
+        console.error("Setup-link email failed:", err);
+      }
+    }
+
+    return NextResponse.json({
+      url: session.url,
+      session_id: session.id,
+      emailed,
+      email_error: emailError,
+    });
+  } catch (err: any) {
+    console.error("setup-link route failed:", err);
+    return NextResponse.json(
+      { error: err?.message || "Unexpected server error" },
+      { status: 500 }
+    );
+  }
 }
 
 function buildEmailText(name: string, url: string, isResend: boolean): string {

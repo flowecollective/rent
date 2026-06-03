@@ -171,7 +171,7 @@ async function buildRentPlusFeeLines(
   week_end: string,
   weekLabel: string
 ): Promise<PreparedLines> {
-  const feeRate = Number(stylist.fee_rate) || 0.075;
+  const feeRate = stylist.fee_rate != null ? Number(stylist.fee_rate) : 0.075;
   const rent = Number(stylist.weekly_rent) || 600;
 
   // Monthly service-fee cap. Count only invoices already billed
@@ -229,7 +229,7 @@ function buildPercentRentLines(
   rev: number,
   weekLabel: string
 ): PreparedLines {
-  const feeRate = Number(stylist.fee_rate) || 0.35;
+  const feeRate = stylist.fee_rate != null ? Number(stylist.fee_rate) : 0.35;
   const minRemit = Number(stylist.minimum_remit) || 600;
   const rawFee = Math.round(rev * feeRate * 100) / 100;
   const minimumApplied = rawFee < minRemit;

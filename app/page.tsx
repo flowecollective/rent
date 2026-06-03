@@ -81,7 +81,7 @@ export default function HomePage() {
 
   function calc(stylist: Stylist) {
     const rev = parseFloat(revenue[stylist.id] || "0") || 0;
-    const feeRate = Number(stylist.fee_rate) || (stylist.billing_model === "percent_rent" ? 0.35 : 0.075);
+    const feeRate = stylist.fee_rate != null ? Number(stylist.fee_rate) : (stylist.billing_model === "percent_rent" ? 0.35 : 0.075);
 
     if (stylist.billing_model === "percent_rent") {
       const minRemit = Number(stylist.minimum_remit) || 600;

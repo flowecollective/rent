@@ -94,7 +94,7 @@ export default function SettingsPage() {
     };
 
     const rate = parseFloat(form.fee_rate_pct) / 100;
-    if (!Number.isFinite(rate) || rate <= 0 || rate > 1) {
+    if (!Number.isFinite(rate) || rate < 0 || rate > 1) {
       setAdding(false);
       setMsg({ type: "err", text: "Fee rate must be between 0 and 100%" });
       return;
@@ -157,7 +157,7 @@ export default function SettingsPage() {
       billing_model: editing.billing_model,
     };
     const rate = parseFloat(editing.fee_rate_pct) / 100;
-    if (Number.isFinite(rate) && rate > 0 && rate <= 1) body.fee_rate = rate;
+    if (Number.isFinite(rate) && rate >= 0 && rate <= 1) body.fee_rate = rate;
     const rent = parseFloat(editing.weekly_rent);
     if (Number.isFinite(rent) && rent >= 0) body.weekly_rent = rent;
     if (editing.billing_model === "percent_rent") {
